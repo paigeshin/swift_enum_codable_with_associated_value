@@ -1,48 +1,53 @@
 # swift_enum_codable_with_associated_value
 
 ```swift
-    enum MessageType: Codable, Equatable, Hashable {
-        case purposes([Purpose])
-        case affirmations([String])
+enum MessageType: Codable, Equatable, Hashable {
+        case purpose(Purpose)
+        case affirmationMessageGroup(AffirmationMessageGroup)
+        
+        private enum CodingKeys: CodingKey {
+            case type
+            case value
+        }
         
         // Enum with raw values will have an automatically generated initializer
         // init(rawValue:), so we can use it to determine the case.
-        enum Raw: String, Codable {
-            case purposes
-            case affirmations
+        enum `Type`: String, Codable {
+            case purpose
+            case affirmationMessageGroup
         }
-        
-        private enum CodingKeys: CodingKey {
-            case type, value
-        }
-        
+
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            let type = try container.decode(Raw.self, forKey: .type)
+            let type = try container.decode(`Type`.self, forKey: .type)
             
             switch type {
-            case .purposes:
-                let purposesDecodedValue = try container.decode([String].self, forKey: .value)
-                let purposesValue = purposesDecodedValue.compactMap { Purpose(rawValue: $0) }
-                self = .purposes(purposesValue)
-            case .affirmations:
-                let affirmationsValue = try container.decode([String].self, forKey: .value)
-                self = .affirmations(affirmationsValue)
+            case .purpose:
+                let decodedValue = try container.decode(String.self, forKey: .value)
+                self = .purpose(Purpose(rawValue: decodedValue)!)
+            case .affirmationMessageGroup:
+                let affirmationsValue = try container.decode(AffirmationMessageGroup.self, forKey: .value)
+                self = .affirmationMessageGroup(affirmationsValue)
             }
         }
         
         func encode(to encoder: Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
-            
             switch self {
-            case .purposes(let purposesValue):
-                try container.encode(Raw.purposes, forKey: .type)
+            case .purpose(let purposesValue):
+                try container.encode(`Type`.purpose, forKey: .type)
                 try container.encode(purposesValue, forKey: .value)
-            case .affirmations(let affirmationsValue):
-                try container.encode(Raw.affirmations, forKey: .type)
+            case .affirmationMessageGroup(let affirmationsValue):
+                try container.encode(`Type`.affirmationMessageGroup, forKey: .type)
                 try container.encode(affirmationsValue, forKey: .value)
             }
         }
         
+    }
+    
+    struct AffirmationMessageGroup: Codable, Equatable, Hashable {
+        var id: String
+        var title: String
+        var messages: [String]
     }
 ```
